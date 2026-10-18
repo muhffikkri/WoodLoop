@@ -1,35 +1,32 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Boxes } from "lucide-react";
+import { Suspense } from "react";
 
 import { RouteGuard } from "@/components/auth/route-guard";
-import { EmptyState } from "@/components/feedback/empty-state";
-import { AppHeader } from "@/components/layout/app-header";
+import { LoadingState } from "@/components/feedback/loading-state";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageContainer } from "@/components/layout/page-container";
-import { Button } from "@/components/ui/button";
+import { MyListingsView } from "@/components/supplier/my-listings/my-listings-view";
 
-export const metadata: Metadata = { title: "My listings" };
+export const metadata: Metadata = {
+  title: "My listings",
+  description: "Manage wood offcut batch inventory, availability and reservations.",
+};
 
-export default function MyListingsDependencyPage() {
+export default function MyListingsPage() {
   return (
     <RouteGuard workspace="supplying">
       <AppShell workspace="supplying">
-        <AppHeader title="My listings" backHref="/app/supplier" />
-        <main className="py-8 lg:py-12">
-          <PageContainer size="content">
-            <EmptyState
-              icon={Boxes}
-              title="Listing management is not available yet"
-              description="Viewing, editing and marking batches unavailable belongs to the My Listings task. Your listings are still shown on your supplier home and in the material catalog."
-              action={
-                <Button asChild>
-                  <Link href="/app/supplier">Back to supplier home</Link>
-                </Button>
-              }
-            />
-          </PageContainer>
-        </main>
+        <Suspense
+          fallback={
+            <main className="py-6 sm:py-8 lg:py-10">
+              <PageContainer size="app">
+                <LoadingState label="Loading listings..." rows={3} />
+              </PageContainer>
+            </main>
+          }
+        >
+          <MyListingsView />
+        </Suspense>
       </AppShell>
     </RouteGuard>
   );

@@ -28,6 +28,13 @@ export interface ListingRepository {
     status: ListingStatus,
     actorId: string,
   ): Promise<void>;
+  updateStock(
+    id: string,
+    newTotal: number,
+    actorId: string,
+  ): Promise<Listing>;
+  confirmAvailability(id: string, actorId: string): Promise<Listing>;
+  getHeldReservationQuantity(listingId: string): Promise<number>;
 }
 
 export interface RequestRepository {
@@ -59,6 +66,7 @@ export interface PhotoRepository {
 
 export interface DraftRepository {
   getById(id: string, actorId: string): Promise<ListingDraft | null>;
+  listBySupplier(supplierId: string): Promise<ListingDraft[]>;
   save(draft: ListingDraft, actorId: string): Promise<ListingDraft>;
   remove(id: string, actorId: string): Promise<void>;
 }

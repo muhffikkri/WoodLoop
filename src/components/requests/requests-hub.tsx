@@ -24,9 +24,11 @@ import { demoSessionService } from "@/services/demo/session-service";
 function RequestList({
   direction,
   userId,
+  listingId,
 }: {
   direction: "incoming" | "sent";
   userId: string;
+  listingId?: string | null;
 }) {
   const [state, setState] = React.useState<{
     requests: MaterialRequest[];
@@ -104,7 +106,33 @@ function RequestList({
     );
   }
 
-  if (state.requests.length === 0) {
+  const displayedRequests = listingId
+    ? state.requests.filter((r) => r.listingId === listingId)
+    : state.requests;
+  const filteredListing = listingId ? state.listings.get(listingId) : null;
+
+  if (displayedRequests.length === 0) {
+    if (listingId) {
+      return (
+        <EmptyState
+          icon={Inbox}
+          title="No inquiries for this listing"
+          description={
+            filteredListing
+              ? `There are no incoming requests for "${filteredListing.title}" yet.`
+              : "There are no incoming requests for this batch yet."
+          }
+          action={
+            <Button asChild variant="secondary">
+              <Link href={`/app/requests?view=${direction}`}>
+                View all inquiries
+              </Link>
+            </Button>
+          }
+        />
+      );
+    }
+
     return direction === "incoming" ? (
       <EmptyState
         icon={Inbox}
@@ -131,21 +159,37 @@ function RequestList({
   }
 
   return (
-    <ul className="border-line bg-surface divide-line divide-y overflow-hidden rounded-lg border">
-      {state.requests.map((request) => {
-        const counterpartyId =
-          direction === "incoming" ? request.buyerId : request.supplierId;
-        return (
-          <RequestRow
-            key={request.id}
-            request={request}
-            listing={state.listings.get(request.listingId)}
-            counterparty={state.counterparties.get(counterpartyId)}
-            direction={direction}
-          />
-        );
-      })}
-    </ul>
+    <div className="space-y-3">
+      {listingId ? (
+        <div className="bg-sage-100 border-line text-ink-900 flex items-center justify-between rounded-lg border px-3.5 py-2 text-xs">
+          <span>
+            Filtered by:{" "}
+            <strong>{filteredListing?.title ?? listingId}</strong>
+          </span>
+          <Link
+            href={`/app/requests?view=${direction}`}
+            className="text-brand-900 hover:underline font-semibold"
+          >
+            Clear filter
+          </Link>
+        </div>
+      ) : null}
+      <ul className="border-line bg-surface divide-line divide-y overflow-hidden rounded-lg border">
+        {displayedRequests.map((request) => {
+          const counterpartyId =
+            direction === "incoming" ? request.buyerId : request.supplierId;
+          return (
+            <RequestRow
+              key={request.id}
+              request={request}
+              listing={state.listings.get(request.listingId)}
+              counterparty={state.counterparties.get(counterpartyId)}
+              direction={direction}
+            />
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
@@ -161,6 +205,7 @@ function RequestsHub() {
 
   // Derive active direction from param or default by workspace
   const paramView = searchParams.get("view");
+  const paramListingId = searchParams.get("listingId");
   const direction: "incoming" | "sent" =
     paramView === "incoming"
       ? "incoming"
@@ -267,7 +312,11 @@ function RequestsHub() {
 
             {/* Request List */}
             {userId ? (
-              <RequestList direction={direction} userId={userId} />
+              <RequestList
+                direction={direction}
+                userId={userId}
+                listingId={paramListingId}
+              />
             ) : (
               <LoadingState label="Checking user session..." />
             )}

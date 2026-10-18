@@ -57,18 +57,21 @@ class BrowserDraftRepository implements DraftRepository {
     }
   }
 
-  async getLatestForSupplier(supplierId: string): Promise<ListingDraft | null> {
+  async listBySupplier(supplierId: string): Promise<ListingDraft[]> {
     const database = getDemoDatabase();
     const drafts = await database.drafts
       .where("supplierId")
       .equals(supplierId)
       .toArray();
 
-    if (drafts.length === 0) return null;
-    // Return most recently updated
     return drafts.sort(
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-    )[0] ?? null;
+    );
+  }
+
+  async getLatestForSupplier(supplierId: string): Promise<ListingDraft | null> {
+    const drafts = await this.listBySupplier(supplierId);
+    return drafts[0] ?? null;
   }
 }
 

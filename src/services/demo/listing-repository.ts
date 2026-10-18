@@ -123,8 +123,106 @@ class BrowserListingRepository implements ListingRepository {
     return next;
   }
 
+  async getHeldReservationQuantity(listingId: string): Promise<number> {
+    const database = getDemoDatabase();
+    const requests = await database.requests
+      .where("listingId")
+      .equals(listingId)
+      .toArray();
+    return requests
+      .filter((r) => r.status === "agreed" && r.reservationState === "held")
+      .reduce((sum, r) => sum + (r.reservedQuantity ?? 0), 0);
+  }
+
+  async updateStock(
+    id: string,
+    newTotal: number,
+    actorId: string,
+  ): Promise<Listing> {
+    const database = getDemoDatabase();
+    const listing = await database.listings.get(id);
+    if (!listing) {
+      throw new DemoListingError("This listing is no longer available.");
+    }
+    if (listing.supplierId !== actorId) {
+      throw new DemoListingError(
+        "Only the listing owner can update this batch.",
+      );
+    }
+    if (!Number.isInteger(newTotal) || newTotal <= 0) {
+      throw new DemoListingError(
+        "Total quantity must be a positive whole number.",
+      );
+    }
+
+    const heldReserved = await this.getHeldReservationQuantity(id);
+    if (newTotal < heldReserved) {
+      throw new DemoListingError(
+        `Cannot reduce total quantity below ${heldReserved} ${listing.unit} currently reserved for agreed requests.`,
+      );
+    }
+
+    const newAvailable = newTotal - heldReserved;
+    let nextStatus = listing.status;
+    if (listing.status !== "unavailable") {
+      nextStatus = newAvailable === 0 ? "reserved" : "active";
+    }
+
+    const now = new Date().toISOString();
+    return this.update(
+      id,
+      {
+        quantityTotal: newTotal,
+        quantityAvailable: newAvailable,
+        status: nextStatus,
+        stockCheckedAt: now,
+      },
+      actorId,
+    );
+  }
+
+  async confirmAvailability(id: string, actorId: string): Promise<Listing> {
+    const database = getDemoDatabase();
+    const listing = await database.listings.get(id);
+    if (!listing) {
+      throw new DemoListingError("This listing is no longer available.");
+    }
+    if (listing.supplierId !== actorId) {
+      throw new DemoListingError(
+        "Only the listing owner can confirm availability.",
+      );
+    }
+
+    const now = new Date().toISOString();
+    return this.update(id, { stockCheckedAt: now }, actorId);
+  }
+
   async setAvailability(id: string, status: ListingStatus, actorId: string) {
-    await this.update(id, { status }, actorId);
+    const database = getDemoDatabase();
+    const listing = await database.listings.get(id);
+    if (!listing) {
+      throw new DemoListingError("This listing is no longer available.");
+    }
+    if (listing.supplierId !== actorId) {
+      throw new DemoListingError(
+        "Only the listing owner can update availability.",
+      );
+    }
+
+    let nextStatus = status;
+    if (status === "active" && listing.quantityAvailable <= 0) {
+      nextStatus = "reserved";
+    }
+
+    const now = new Date().toISOString();
+    await this.update(
+      id,
+      {
+        status: nextStatus,
+        stockCheckedAt: now,
+      },
+      actorId,
+    );
   }
 }
 
