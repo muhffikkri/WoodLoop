@@ -2,7 +2,7 @@
 
 WoodLoop AI is a mobile-first B2B marketplace prototype for clean, reusable solid-wood offcuts from furniture and woodworking production.
 
-The current repository state contains **Milestone 0: Project Foundation** only. Product pages, authentication flows, IndexedDB demo repositories, install prompting, service-worker registration, and AI integration are intentionally not implemented yet.
+The current repository includes the project foundation, public landing/PWA foundation, and a browser-local demo authentication flow. Buyer/supplier marketplace pages remain milestone-scoped and are not represented as complete.
 
 ## Stack
 
@@ -11,7 +11,7 @@ The current repository state contains **Milestone 0: Project Foundation** only. 
 - Customized shadcn-compatible primitives backed by Radix UI
 - Lucide icons
 - React Hook Form and Zod foundations
-- Dexie dependency reserved for the Milestone 2 browser-local demo repository
+- Dexie-backed local demo profiles and session persistence
 - Vitest and Testing Library
 
 ## Commands
@@ -29,7 +29,8 @@ The internal `/foundation` route is a no-index visual review surface for tokens,
 
 ## Current truth boundaries
 
-- The app is not connected to production authentication, a marketplace backend, payment, logistics, or an AI endpoint.
+- Authentication is a functional browser-local demo only; no production identity service, marketplace backend, payment, logistics, or AI endpoint is connected.
+- Seed profiles and locally created demo profiles persist per browser/device. No password is stored for a local profile.
 - Demo imagery is fictional and documented in [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md).
 - Future local demo data will be stored per browser/device and must not be represented as cross-device synchronization.
 - AI suggestions must never be presented as verified species, strength, treatment, safety, or structural grading.

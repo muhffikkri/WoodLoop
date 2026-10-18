@@ -71,3 +71,34 @@ export const photoMetadataSchema = z.object({
     .number()
     .max(10 * 1024 * 1024, "Each photo must be 10 MB or smaller."),
 });
+
+export const demoLoginSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "Enter your email.")
+    .email("Enter a valid email address."),
+  password: z.string().min(1, "Enter your password."),
+});
+
+export const localDemoProfileSchema = z
+  .object({
+    displayName: z
+      .string()
+      .trim()
+      .min(2, "Use at least 2 characters.")
+      .max(60, "Keep the name under 60 characters."),
+    email: z
+      .string()
+      .trim()
+      .min(1, "Enter your work email.")
+      .email("Enter a valid email address."),
+    role: z.enum(["buyer", "supplier", "both"], {
+      message: "Choose how you want to use WoodLoop.",
+    }),
+  })
+  .transform((value) => ({
+    ...value,
+    displayName: value.displayName.trim(),
+    email: value.email.trim().toLowerCase(),
+  }));

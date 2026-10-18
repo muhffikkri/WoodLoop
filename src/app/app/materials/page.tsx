@@ -1,11 +1,18 @@
-import { AvailabilityPage } from "@/components/marketing/availability-page";
-export default function MaterialsAvailabilityPage() {
+import { Suspense } from "react";
+
+import { LoadingState } from "@/components/feedback/loading-state";
+import { MaterialCatalog } from "@/components/materials/material-catalog";
+
+export default function MaterialsPage() {
   return (
-    <AvailabilityPage title="Materials catalog is being prepared">
-      <p>
-        Guest browsing will arrive with the catalog milestone. This demo does
-        not present sample inventory as real supplier availability.
-      </p>
-    </AvailabilityPage>
+    <Suspense
+      fallback={
+        <main className="mx-auto max-w-5xl px-4 py-10">
+          <LoadingState label="Loading material catalog..." rows={3} />
+        </main>
+      }
+    >
+      <MaterialCatalog />
+    </Suspense>
   );
 }

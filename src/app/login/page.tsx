@@ -1,12 +1,26 @@
-import { AvailabilityPage } from "@/components/marketing/availability-page";
-export default function LoginAvailabilityPage() {
+import type { Metadata } from "next";
+import { Suspense } from "react";
+
+import { AuthFormFallback, AuthFrame } from "@/components/auth/auth-frame";
+import { LoginForm } from "@/components/auth/login-form";
+
+export const metadata: Metadata = { title: "Log in" };
+
+async function LoginQuery({
+  searchParams,
+}: Pick<PageProps<"/login">, "searchParams">) {
+  const query = await searchParams;
+  const returnTo = typeof query.returnTo === "string" ? query.returnTo : null;
+  const intent = typeof query.intent === "string" ? query.intent : null;
+  return <LoginForm returnTo={returnTo} intent={intent} />;
+}
+
+export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
-    <AvailabilityPage title="Sign-in is the next demo step">
-      <p>
-        Account and supplier-listing flows are not connected yet. Your intent to
-        list offcuts will be available once the demo session flow is
-        implemented.
-      </p>
-    </AvailabilityPage>
+    <AuthFrame>
+      <Suspense fallback={<AuthFormFallback />}>
+        <LoginQuery searchParams={searchParams} />
+      </Suspense>
+    </AuthFrame>
   );
 }

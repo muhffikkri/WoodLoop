@@ -32,7 +32,7 @@ test("landing actions lead to honest available routes", async ({ page }) => {
   await page.getByRole("link", { name: "List your offcuts" }).first().click();
   await expect(page).toHaveURL(/\/login\?intent=supplier/);
   await expect(
-    page.getByRole("heading", { name: "Sign-in is the next demo step" }),
+    page.getByRole("heading", { name: "Welcome to WoodLoop" }),
   ).toBeVisible();
 });
 

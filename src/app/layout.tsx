@@ -3,6 +3,7 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 
 import { Toaster } from "@/components/ui/toaster";
 import { ServiceWorkerRegistrar } from "@/components/install/service-worker-registrar";
+import { SessionProvider } from "@/components/auth/session-provider";
 
 import "./globals.css";
 
@@ -43,7 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${plusJakartaSans.variable}`}>
       <body>
-        {children}
+        <SessionProvider>{children}</SessionProvider>
         <ServiceWorkerRegistrar />
         <Toaster />
       </body>

@@ -13,6 +13,7 @@ import type {
   RequestMessage,
   RequestStatus,
   StoredPhoto,
+  Role,
   User,
 } from "@/domain/types";
 
@@ -69,6 +70,13 @@ export interface AiAnalysisService {
 export interface SessionService {
   getCurrentUser(): Promise<User | null>;
   loginDemo(userId: string): Promise<User>;
+  loginWithDemoCredentials(email: string, password: string): Promise<User>;
+  createLocalProfile(input: {
+    displayName: string;
+    email: string;
+    role: Role;
+    activeWorkspace: ActiveWorkspace;
+  }): Promise<User>;
   logout(): Promise<void>;
   setWorkspace(workspace: ActiveWorkspace): Promise<void>;
 }

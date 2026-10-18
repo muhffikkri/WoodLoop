@@ -1,21 +1,42 @@
-import { AppLogo } from "@/components/layout/app-logo";
-import { PageContainer } from "@/components/layout/page-container";
+"use client";
 
-export default function AppEntryFoundation() {
+import * as React from "react";
+import { useRouter } from "next/navigation";
+
+import { useSession } from "@/components/auth/session-provider";
+import { ErrorState } from "@/components/feedback/error-state";
+import { LoadingState } from "@/components/feedback/loading-state";
+
+export default function AppEntryPage() {
+  const router = useRouter();
+  const session = useSession();
+
+  React.useEffect(() => {
+    if (session.status !== "ready") return;
+    if (!session.user) {
+      router.replace("/login?returnTo=%2Fapp");
+      return;
+    }
+    router.replace(
+      session.user.activeWorkspace === "supplying"
+        ? "/app/supplier"
+        : "/app/buyer",
+    );
+  }, [router, session.status, session.user]);
+
+  if (session.status === "error") {
+    return (
+      <main className="mx-auto min-h-svh max-w-xl px-4 py-16">
+        <ErrorState
+          description={session.error ?? undefined}
+          onRetry={() => void session.retry()}
+        />
+      </main>
+    );
+  }
   return (
-    <main className="flex min-h-svh items-center py-12">
-      <PageContainer size="content">
-        <div className="border-line bg-surface rounded-lg border p-6 sm:p-8">
-          <AppLogo />
-          <h1 className="font-heading mt-8 text-2xl font-semibold">
-            Application foundation
-          </h1>
-          <p className="text-ink-600 mt-3 leading-7">
-            Role-aware session routing and demo data begin in Milestone 2. This
-            route exists now so the documented PWA start URL resolves safely.
-          </p>
-        </div>
-      </PageContainer>
+    <main className="mx-auto min-h-svh max-w-xl px-4 py-16">
+      <LoadingState label="Opening your WoodLoop workspace..." rows={2} />
     </main>
   );
 }
