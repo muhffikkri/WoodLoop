@@ -31,6 +31,7 @@ export function filterListings(
 
   return listings.filter((listing) => {
     if (!statuses.includes(listing.status)) return false;
+    if (!filters.statuses && listing.quantityAvailable <= 0) return false;
     if (query && !textForListing(listing).includes(query)) return false;
     if (filters.forms?.length && !filters.forms.includes(listing.woodForm))
       return false;

@@ -39,4 +39,47 @@ describe("listing query helpers", () => {
       "demo-board-02",
     ]);
   });
+
+  it("never treats unknown dimensions as a numeric match", () => {
+    const unknown = {
+      ...DEMO_LISTINGS[0],
+      id: "unknown-dims",
+      dimensions: { length: null, width: undefined, thickness: null, approximate: true },
+    };
+    for (const filters of [
+      { minLengthMm: 1 },
+      { minWidthMm: 1 },
+      { minThicknessMm: 1 },
+    ]) {
+      expect(
+        filterListings([unknown], filters).map((listing) => listing.id),
+      ).toEqual([]);
+    }
+    expect(filterListings([unknown], {})).toHaveLength(1);
+  });
+
+  it("filters by unit so sets are not compared against pieces", () => {
+    const sets = { ...DEMO_LISTINGS[0], id: "sets", unit: "sets" as const };
+    expect(
+      filterListings([sets], { minimumQuantity: 1, quantityUnit: "pieces" }),
+    ).toHaveLength(0);
+    expect(
+      filterListings([sets], { minimumQuantity: 1, quantityUnit: "sets" }),
+    ).toHaveLength(1);
+  });
+
+  it("hides out-of-stock batches from default browse", () => {
+    const empty = { ...DEMO_LISTINGS[0], id: "empty", quantityAvailable: 0 };
+    expect(filterListings([empty], {})).toHaveLength(0);
+  });
+
+  it("sorts by quantity in both directions deterministically", () => {
+    const active = filterListings([...DEMO_LISTINGS]);
+    expect(
+      sortListings(active, "quantity_desc").map((listing) => listing.id),
+    ).toEqual(["demo-strip-01", "demo-block-01", "demo-board-01", "demo-board-02"]);
+    expect(
+      sortListings(active, "quantity_asc").map((listing) => listing.id),
+    ).toEqual(["demo-board-02", "demo-board-01", "demo-block-01", "demo-strip-01"]);
+  });
 });
