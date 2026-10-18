@@ -34,9 +34,16 @@ export default function NewListingDependencyPage() {
               <Alert className="mt-5">
                 No listing has been created or published by reaching this page.
               </Alert>
-              <Button asChild className="mt-6">
-                <Link href="/app/supplier">Return to supplier home</Link>
-              </Button>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Button asChild>
+                  <Link href="/app/supplier">Return to supplier home</Link>
+                </Button>
+                <Button asChild variant="secondary">
+                  <Link href="/app/guidance?returnTo=%2Fapp%2Flistings%2Fnew">
+                    Photo tips
+                  </Link>
+                </Button>
+              </div>
             </div>
           </PageContainer>
         </main>

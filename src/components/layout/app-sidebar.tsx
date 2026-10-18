@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Camera } from "lucide-react";
 
 import { AppLogo } from "@/components/layout/app-logo";
 import {
@@ -40,6 +41,15 @@ function AppSidebar({ workspace }: { workspace: ActiveWorkspace }) {
           );
         })}
       </nav>
+      {workspace === "supplying" ? (
+        <Link
+          href="/app/guidance"
+          className="text-ink-600 hover:text-ink-900 mx-3 mt-4 flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-semibold"
+        >
+          <Camera aria-hidden="true" className="size-5" strokeWidth={1.9} />
+          Photo tips
+        </Link>
+      ) : null}
       <div className="text-ink-600 mt-auto px-6 py-5 text-xs leading-5">
         Demo mode · Data stays on this device.
       </div>

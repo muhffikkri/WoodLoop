@@ -53,7 +53,10 @@ test("supplier navigation and contextual links resolve", async ({ page }) => {
   await page.getByRole("link", { name: "View all listings" }).click();
   await expect(page).toHaveURL(/\/app\/listings$/);
   await page.goBack();
-  await page.getByRole("link", { name: "Photo tips" }).click();
+  await page
+    .getByRole("main")
+    .getByRole("link", { name: "Photo tips" })
+    .click();
   await expect(page).toHaveURL(/\/app\/guidance$/);
   await page.goto("/app/supplier");
   await stat(page, "Open requests").click();
