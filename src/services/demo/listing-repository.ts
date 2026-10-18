@@ -11,6 +11,8 @@ import type { ListingRepository } from "@/services/repositories";
 import { DEMO_LISTINGS } from "@/services/demo/demo-listings";
 import { filterListings, sortListings } from "@/services/demo/listing-query";
 
+import { demoPhotoRepository } from "@/services/demo/photo-repository";
+
 export class DemoListingError extends Error {
   constructor(message: string) {
     super(message);
@@ -35,25 +37,43 @@ function notifyListingChange() {
 class BrowserListingRepository implements ListingRepository {
   async list(filters: ListingFilters = {}, sort: ListingSort = "recent") {
     await ensureSeededListings();
-    return sortListings(
+    const results = sortListings(
       filterListings(await getDemoDatabase().listings.toArray(), filters),
       sort,
     );
+    const customPhotoIds = results
+      .flatMap((l) => l.photoIds)
+      .filter((id) => id.startsWith("photo-"));
+    if (customPhotoIds.length > 0) {
+      await demoPhotoRepository.listByIds(customPhotoIds);
+    }
+    return results;
   }
 
   async getById(id: string) {
     await ensureSeededListings();
-    return (await getDemoDatabase().listings.get(id)) ?? null;
+    const listing = (await getDemoDatabase().listings.get(id)) ?? null;
+    if (listing?.photoIds && listing.photoIds.length > 0) {
+      await demoPhotoRepository.listByIds(listing.photoIds);
+    }
+    return listing;
   }
 
   async listBySupplier(supplierId: string) {
     await ensureSeededListings();
-    return sortListings(
+    const results = sortListings(
       await getDemoDatabase()
         .listings.where("supplierId")
         .equals(supplierId)
         .toArray(),
     );
+    const customPhotoIds = results
+      .flatMap((l) => l.photoIds)
+      .filter((id) => id.startsWith("photo-"));
+    if (customPhotoIds.length > 0) {
+      await demoPhotoRepository.listByIds(customPhotoIds);
+    }
+    return results;
   }
 
   async create(data: NewListingInput, actorId: string) {

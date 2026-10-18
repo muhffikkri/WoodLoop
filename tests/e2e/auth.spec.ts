@@ -74,7 +74,7 @@ test("supplier login preserves the listing returnTo intent", async ({
   await page.getByRole("button", { name: "Continue as Demo Supplier" }).click();
   await expect(page).toHaveURL(/\/app\/listings\/new$/);
   await expect(
-    page.getByRole("heading", { name: "Your supplier intent was preserved" }),
+    page.getByRole("heading", { name: "Upload batch photos" }),
   ).toBeVisible();
 });
 

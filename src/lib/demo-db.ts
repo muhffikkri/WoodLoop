@@ -1,6 +1,12 @@
 import Dexie, { type EntityTable } from "dexie";
 
-import type { Listing, MaterialRequest, User } from "@/domain/types";
+import type {
+  Listing,
+  ListingDraft,
+  MaterialRequest,
+  StoredPhoto,
+  User,
+} from "@/domain/types";
 
 export type DemoSessionRecord = {
   id: "current";
@@ -13,6 +19,8 @@ class WoodLoopDemoDatabase extends Dexie {
   sessions!: EntityTable<DemoSessionRecord, "id">;
   listings!: EntityTable<Listing, "id">;
   requests!: EntityTable<MaterialRequest, "id">;
+  photos!: EntityTable<StoredPhoto, "id">;
+  drafts!: EntityTable<ListingDraft, "id">;
 
   constructor() {
     super("woodloop-ai-demo");
@@ -33,6 +41,16 @@ class WoodLoopDemoDatabase extends Dexie {
         "id, supplierId, status, region, woodForm, createdAt, updatedAt, isDemo",
       requests:
         "id, listingId, buyerId, supplierId, status, createdAt, updatedAt",
+    });
+    this.version(4).stores({
+      users: "id, &email, role, isDemo",
+      sessions: "id, userId",
+      listings:
+        "id, supplierId, status, region, woodForm, createdAt, updatedAt, isDemo",
+      requests:
+        "id, listingId, buyerId, supplierId, status, createdAt, updatedAt",
+      photos: "id, ownerId, listingId, draftId, createdAt",
+      drafts: "id, supplierId, currentStep, updatedAt",
     });
   }
 }

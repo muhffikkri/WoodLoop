@@ -174,7 +174,15 @@ const photoSources = {
   },
 } as const;
 
-export function listingPhoto(photoId: string) {
+const dynamicPhotoCache = new Map<string, { src: string; alt: string }>();
+
+export function registerPhoto(id: string, src: string, alt: string) {
+  dynamicPhotoCache.set(id, { src, alt });
+}
+
+export function listingPhoto(photoId: string): { src: string; alt: string } {
+  const cached = dynamicPhotoCache.get(photoId);
+  if (cached) return cached;
   return (
     photoSources[photoId as keyof typeof photoSources] ?? photoSources.boards
   );
