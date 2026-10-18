@@ -1,4 +1,5 @@
 import {
+  Boxes,
   CirclePlus,
   Home,
   MessageSquareText,
@@ -30,12 +31,33 @@ export const navigationByWorkspace: Record<ActiveWorkspace, NavigationItem[]> =
     ],
     supplying: [
       { label: "Home", href: "/app/supplier", icon: Home },
+      { label: "My Listings", href: "/app/listings", icon: Boxes },
       {
         label: "Add",
         href: "/app/listings/new",
         icon: CirclePlus,
         prominent: true,
       },
+      {
+        label: "Requests",
+        href: "/app/requests?view=incoming",
+        icon: MessageSquareText,
+      },
       { label: "Profile", href: "/app/profile", icon: UserRound },
     ],
   };
+
+/** The active item is the one with the longest matching base path. */
+export function activeNavigationHref(
+  items: NavigationItem[],
+  pathname: string,
+) {
+  let best: string | undefined;
+  for (const { href } of items) {
+    const base = href.split("?")[0];
+    const matches = pathname === base || pathname.startsWith(`${base}/`);
+    if (matches && (!best || base.length > best.split("?")[0].length))
+      best = href;
+  }
+  return best;
+}

@@ -111,11 +111,12 @@ test("register creates a passwordless local profile and persists it", async ({
   await page.getByRole("button", { name: "Create local demo profile" }).click();
   await expect(page).toHaveURL(/\/app\/supplier$/);
   await expect(
-    page.getByRole("heading", { name: "Welcome, Kita Workshop." }),
+    page.getByRole("heading", { name: "Your workspace" }),
   ).toBeVisible();
+  await expect(page.getByText("No listings yet")).toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Welcome, Kita Workshop." }),
+    page.getByRole("heading", { name: "Your workspace" }),
   ).toBeVisible();
 });
 

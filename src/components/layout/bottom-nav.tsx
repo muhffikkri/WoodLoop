@@ -5,7 +5,10 @@ import { usePathname } from "next/navigation";
 
 import type { ActiveWorkspace } from "@/domain/types";
 import { cn } from "@/lib/utils";
-import { navigationByWorkspace } from "@/components/layout/navigation";
+import {
+  activeNavigationHref,
+  navigationByWorkspace,
+} from "@/components/layout/navigation";
 
 function BottomNav({ workspace }: { workspace: ActiveWorkspace }) {
   const pathname = usePathname();
@@ -18,12 +21,7 @@ function BottomNav({ workspace }: { workspace: ActiveWorkspace }) {
     >
       <div className="mx-auto grid min-h-18 max-w-xl grid-flow-col auto-cols-fr px-1">
         {items.map(({ href, icon: Icon, label, prominent }) => {
-          const baseHref = href.split("?")[0];
-          const active =
-            pathname === baseHref ||
-            (baseHref !== "/app/buyer" &&
-              baseHref !== "/app/supplier" &&
-              pathname.startsWith(`${baseHref}/`));
+          const active = activeNavigationHref(items, pathname) === href;
 
           return (
             <Link

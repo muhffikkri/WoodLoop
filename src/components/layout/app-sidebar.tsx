@@ -4,7 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { AppLogo } from "@/components/layout/app-logo";
-import { navigationByWorkspace } from "@/components/layout/navigation";
+import {
+  activeNavigationHref,
+  navigationByWorkspace,
+} from "@/components/layout/navigation";
 import type { ActiveWorkspace } from "@/domain/types";
 import { cn } from "@/lib/utils";
 
@@ -18,12 +21,9 @@ function AppSidebar({ workspace }: { workspace: ActiveWorkspace }) {
       </div>
       <nav className="grid gap-1 px-3" aria-label="Application navigation">
         {navigationByWorkspace[workspace].map(({ href, icon: Icon, label }) => {
-          const baseHref = href.split("?")[0];
           const active =
-            pathname === baseHref ||
-            (baseHref !== "/app/buyer" &&
-              baseHref !== "/app/supplier" &&
-              pathname.startsWith(`${baseHref}/`));
+            activeNavigationHref(navigationByWorkspace[workspace], pathname) ===
+            href;
           return (
             <Link
               key={href}
