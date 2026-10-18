@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { LoadingState } from "@/components/feedback/loading-state";
 import { MaterialDetail } from "@/components/materials/material-detail";
+
+export const metadata: Metadata = {
+  title: "Material details",
+  description:
+    "Supplier-confirmed wood offcut details, measurements, and request coordination.",
+};
 
 export default function MaterialDetailPage() {
   return (
