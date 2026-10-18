@@ -20,6 +20,9 @@
 # production
 /build
 
+# Local AI vibe coding pack — do not commit or push
+/WOODLOOP_AI_VIBE_CODING_PACK/
+
 # misc
 .DS_Store
 *.pem
