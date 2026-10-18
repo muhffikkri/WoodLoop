@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 
 import { Toaster } from "@/components/ui/toaster";
+import { ServiceWorkerRegistrar } from "@/components/install/service-worker-registrar";
 
 import "./globals.css";
 
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${inter.variable} ${plusJakartaSans.variable}`}>
       <body>
         {children}
+        <ServiceWorkerRegistrar />
         <Toaster />
       </body>
     </html>
