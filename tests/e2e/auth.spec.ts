@@ -55,11 +55,15 @@ test("demo buyer opens buyer home and the session persists on reload", async ({
   await page.getByRole("button", { name: "Continue as Demo Buyer" }).click();
   await expect(page).toHaveURL(/\/app\/buyer$/);
   await expect(
-    page.getByRole("heading", { name: "Welcome, Demo Buyer." }),
+    page.getByRole("heading", {
+      name: "Find materials for your next project.",
+    }),
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Welcome, Demo Buyer." }),
+    page.getByRole("heading", {
+      name: "Find materials for your next project.",
+    }),
   ).toBeVisible();
 });
 

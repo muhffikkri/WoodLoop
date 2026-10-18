@@ -70,8 +70,8 @@ test("a buyer home card opens the matching repository-backed material detail", a
   await expect(
     page.getByRole("heading", { name: "Wide board offcuts · sample batch" }),
   ).toBeVisible();
-  await expect(page.getByText("720 × 180 × 20 mm")).toBeVisible();
-  await expect(page.getByText("12 pieces")).toBeVisible();
+  await expect(page.getByText("720 × 180 × 20 mm").first()).toBeVisible();
+  await expect(page.getByText("12 pieces").first()).toBeVisible();
 });
 
 test("buyer requests navigation resolves to an honest dependency state", async ({
@@ -83,4 +83,22 @@ test("buyer requests navigation resolves to an honest dependency state", async (
   await expect(
     page.getByRole("heading", { name: "Requests are not available yet" }),
   ).toBeVisible();
+});
+
+test("project-needs form validates and carries location into the catalog", async ({
+  page,
+}) => {
+  await loginAsDemoBuyer(page);
+  await page.getByRole("button", { name: "Find matches" }).click();
+  await expect(
+    page.getByText("Enter at least one project need"),
+  ).toBeVisible();
+  await page.getByLabel("Minimum quantity in pieces").fill("-3");
+  await page.getByRole("button", { name: "Find matches" }).click();
+  await expect(page.getByText("must be positive numbers")).toBeVisible();
+  await page.getByLabel("Minimum quantity in pieces").fill("2");
+  await page.getByLabel("Location area").fill("Setagaya");
+  await page.getByRole("button", { name: "Find matches" }).click();
+  await expect(page).toHaveURL(/region=Setagaya/);
+  await expect(page).toHaveURL(/minQuantity=2/);
 });

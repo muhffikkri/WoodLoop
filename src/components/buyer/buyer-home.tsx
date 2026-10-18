@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/feedback/empty-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { AppHeader } from "@/components/layout/app-header";
 import { PageContainer } from "@/components/layout/page-container";
+import { useSession } from "@/components/auth/session-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ListingFilters, WoodForm } from "@/domain/types";
@@ -20,7 +21,10 @@ import { filtersToSearchParams } from "@/lib/listing-filters";
 
 function BuyerHome() {
   const router = useRouter();
+  const { user } = useSession();
   const { listings, status, error, retry } = useListings();
+  const [needsError, setNeedsError] = React.useState<string | null>(null);
+  const firstName = user?.displayName?.trim().split(/\s+/)[0];
   const [query, setQuery] = React.useState("");
   const [filterOpen, setFilterOpen] = React.useState(false);
   const [needs, setNeeds] = React.useState({
@@ -43,6 +47,22 @@ function BuyerHome() {
 
   function findMatches(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const numbers = [needs.minLength, needs.minWidth, needs.quantity];
+    if (numbers.some((value) => value !== "" && !(Number(value) > 0))) {
+      setNeedsError("Dimensions and quantity must be positive numbers.");
+      return;
+    }
+    if (
+      !needs.form &&
+      !needs.location.trim() &&
+      numbers.every((value) => value === "")
+    ) {
+      setNeedsError(
+        "Enter at least one project need, or browse all materials.",
+      );
+      return;
+    }
+    setNeedsError(null);
     browse({
       forms: needs.form ? [needs.form as WoodForm] : undefined,
       minLengthMm: Number(needs.minLength) || undefined,
@@ -56,7 +76,7 @@ function BuyerHome() {
   return (
     <>
       <AppHeader
-        title="Find materials"
+        title={firstName ? `Hello, ${firstName}` : "Hello"}
         description="Local demo workspace"
         action={
           <Button asChild variant="text" size="icon">
@@ -156,8 +176,9 @@ function BuyerHome() {
               </div>
             </div>
             <form
-              className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto]"
+              className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
               onSubmit={findMatches}
+              noValidate
             >
               <label className="sr-only" htmlFor="needs-form">
                 Material form
@@ -230,9 +251,31 @@ function BuyerHome() {
                 }
                 placeholder="Min. quantity"
               />
+              <label className="sr-only" htmlFor="needs-location">
+                Location area
+              </label>
+              <Input
+                id="needs-location"
+                value={needs.location}
+                onChange={(event) =>
+                  setNeeds((current) => ({
+                    ...current,
+                    location: event.target.value,
+                  }))
+                }
+                placeholder="Location area"
+              />
               <Button type="submit" size="large">
                 Find matches
               </Button>
+              {needsError ? (
+                <p
+                  role="alert"
+                  className="text-sm font-medium text-red-700 sm:col-span-2 lg:col-span-5"
+                >
+                  {needsError}
+                </p>
+              ) : null}
             </form>
           </section>
 

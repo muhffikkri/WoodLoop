@@ -25,7 +25,7 @@ test("landing actions lead to honest available routes", async ({ page }) => {
   await page.getByRole("link", { name: "Explore materials" }).first().click();
   await expect(page).toHaveURL(/\/app\/materials$/);
   await expect(
-    page.getByRole("heading", { name: "Materials catalog is being prepared" }),
+    page.getByRole("heading", { name: "Available offcuts" }),
   ).toBeVisible();
 
   await page.goto("/");
