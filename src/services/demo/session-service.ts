@@ -42,6 +42,13 @@ class BrowserDemoSessionService implements SessionService {
     return user;
   }
 
+  async getUserById(userId: string) {
+    await this.seedIdentities();
+    const database = getDemoDatabase();
+    const user = await database.users.get(userId);
+    return user ?? null;
+  }
+
   async loginDemo(userId: string) {
     await this.seedIdentities();
     const database = getDemoDatabase();

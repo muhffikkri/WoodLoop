@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { MessageSquareText } from "lucide-react";
+import { Inbox, Send } from "lucide-react";
 
 import { RouteGuard } from "@/components/auth/route-guard";
 import { useSession } from "@/components/auth/session-provider";
@@ -14,39 +14,65 @@ import { AppHeader } from "@/components/layout/app-header";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageContainer } from "@/components/layout/page-container";
 import { RequestRow } from "@/components/requests/request-row";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Listing, MaterialRequest } from "@/domain/types";
+import type { Listing, MaterialRequest, User } from "@/domain/types";
 import { demoListingRepository } from "@/services/demo/listing-repository";
 import { demoRequestRepository } from "@/services/demo/request-repository";
+import { demoSessionService } from "@/services/demo/session-service";
 
-function RequestList({ direction }: { direction: "incoming" | "sent" }) {
-  const { user } = useSession();
+function RequestList({
+  direction,
+  userId,
+}: {
+  direction: "incoming" | "sent";
+  userId: string;
+}) {
   const [state, setState] = React.useState<{
     requests: MaterialRequest[];
     listings: Map<string, Listing>;
+    counterparties: Map<string, User>;
     status: "loading" | "ready" | "error";
-  }>({ requests: [], listings: new Map(), status: "loading" });
+  }>({
+    requests: [],
+    listings: new Map(),
+    counterparties: new Map(),
+    status: "loading",
+  });
 
-  const userId = user?.id;
   const fetchState = React.useCallback(async (): Promise<typeof state> => {
-    if (!userId) return { requests: [], listings: new Map(), status: "loading" };
     try {
       const requests = await demoRequestRepository.listForUser(
         userId,
         direction,
       );
+
       const listings = new Map<string, Listing>();
-      await Promise.all(
-        [...new Set(requests.map((request) => request.listingId))].map(
-          async (id) => {
-            const listing = await demoListingRepository.getById(id);
-            if (listing) listings.set(id, listing);
-          },
-        ),
-      );
-      return { requests, listings, status: "ready" };
+      const counterparties = new Map<string, User>();
+
+      await Promise.all([
+        ...[...new Set(requests.map((r) => r.listingId))].map(async (id) => {
+          const listing = await demoListingRepository.getById(id);
+          if (listing) listings.set(id, listing);
+        }),
+        ...[
+          ...new Set(
+            requests.map((r) => (direction === "incoming" ? r.buyerId : r.supplierId)),
+          ),
+        ].map(async (cId) => {
+          const user = await demoSessionService.getUserById(cId);
+          if (user) counterparties.set(cId, user);
+        }),
+      ]);
+
+      return { requests, listings, counterparties, status: "ready" };
     } catch {
-      return { requests: [], listings: new Map(), status: "error" };
+      return {
+        requests: [],
+        listings: new Map(),
+        counterparties: new Map(),
+        status: "error",
+      };
     }
   }, [direction, userId]);
 
@@ -56,6 +82,7 @@ function RequestList({ direction }: { direction: "incoming" | "sent" }) {
       void fetchState().then((next) => {
         if (active) setState(next);
       });
+
     refresh();
     window.addEventListener("woodloop:requests-changed", refresh);
     return () => {
@@ -64,32 +91,36 @@ function RequestList({ direction }: { direction: "incoming" | "sent" }) {
     };
   }, [fetchState]);
 
-  if (state.status === "loading")
-    return <LoadingState label="Loading requests..." rows={2} />;
-  if (state.status === "error")
+  if (state.status === "loading") {
+    return <LoadingState label="Loading requests..." rows={3} />;
+  }
+
+  if (state.status === "error") {
     return (
       <ErrorState
         description="WoodLoop could not read locally saved requests."
         onRetry={() => void fetchState().then(setState)}
       />
     );
-  if (state.requests.length === 0)
+  }
+
+  if (state.requests.length === 0) {
     return direction === "incoming" ? (
       <EmptyState
-        icon={MessageSquareText}
+        icon={Inbox}
         title="No incoming requests yet"
         description="Requests appear here when a buyer asks about one of your active listings."
         action={
           <Button asChild>
-            <Link href="/app/supplier">Back to supplier home</Link>
+            <Link href="/app/supplier">Go to supplier dashboard</Link>
           </Button>
         }
       />
     ) : (
       <EmptyState
-        icon={MessageSquareText}
-        title="Requests are not available yet"
-        description="Request coordination begins after the listing and material-detail workflow is completed. No request has been created here."
+        icon={Send}
+        title="You haven't requested any materials"
+        description="When you inquire about timber offcuts, your requests and supplier communications appear here."
         action={
           <Button asChild>
             <Link href="/app/materials">Browse materials</Link>
@@ -97,33 +128,149 @@ function RequestList({ direction }: { direction: "incoming" | "sent" }) {
         }
       />
     );
+  }
+
   return (
     <ul className="border-line bg-surface divide-line divide-y overflow-hidden rounded-lg border">
-      {state.requests.map((request) => (
-        <RequestRow
-          key={request.id}
-          request={request}
-          listing={state.listings.get(request.listingId)}
-          direction={direction}
-        />
-      ))}
+      {state.requests.map((request) => {
+        const counterpartyId =
+          direction === "incoming" ? request.buyerId : request.supplierId;
+        return (
+          <RequestRow
+            key={request.id}
+            request={request}
+            listing={state.listings.get(request.listingId)}
+            counterparty={state.counterparties.get(counterpartyId)}
+            direction={direction}
+          />
+        );
+      })}
     </ul>
   );
 }
 
 function RequestsHub() {
-  const direction =
-    useSearchParams().get("view") === "incoming" ? "incoming" : "sent";
+  const searchParams = useSearchParams();
+  const { user } = useSession();
+  const [counts, setCounts] = React.useState<{ incoming: number; sent: number }>({
+    incoming: 0,
+    sent: 0,
+  });
+
+  const userId = user?.id;
+
+  // Derive active direction from param or default by workspace
+  const paramView = searchParams.get("view");
+  const direction: "incoming" | "sent" =
+    paramView === "incoming"
+      ? "incoming"
+      : paramView === "sent"
+        ? "sent"
+        : user?.activeWorkspace === "supplying"
+          ? "incoming"
+          : "sent";
+
+  // Load counts for both tabs
+  React.useEffect(() => {
+    if (!userId) return;
+    let active = true;
+
+    async function loadCounts() {
+      try {
+        const [incomingList, sentList] = await Promise.all([
+          demoRequestRepository.listForUser(userId!, "incoming"),
+          demoRequestRepository.listForUser(userId!, "sent"),
+        ]);
+        if (active) {
+          setCounts({
+            incoming: incomingList.length,
+            sent: sentList.length,
+          });
+        }
+      } catch {
+        // keep fallback counts
+      }
+    }
+
+    void loadCounts();
+    window.addEventListener("woodloop:requests-changed", loadCounts);
+    return () => {
+      active = false;
+      window.removeEventListener("woodloop:requests-changed", loadCounts);
+    };
+  }, [userId]);
+
   const workspace = direction === "incoming" ? "supplying" : "buying";
+  const showIncomingTab = user?.role === "both" || user?.role === "supplier";
+  const showSentTab = user?.role === "both" || user?.role === "buyer";
+
   return (
     <RouteGuard workspace={workspace}>
       <AppShell workspace={workspace}>
-        <AppHeader
-          title={direction === "incoming" ? "Incoming requests" : "Requests"}
-        />
-        <main className="py-8 lg:py-12">
+        <AppHeader title="Requests & coordination" />
+        <main className="py-6 sm:py-8 lg:py-10">
           <PageContainer size="content">
-            <RequestList direction={direction} />
+            {/* Header explanation */}
+            <div className="mb-6">
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold text-ink-900">
+                Material requests
+              </h2>
+              <p className="text-ink-600 mt-1 text-sm">
+                Coordinate offcut availability, agreed terms, and physical handover.
+              </p>
+            </div>
+
+            {/* Navigation Tabs */}
+            {(showIncomingTab && showSentTab) ? (
+              <div className="border-b border-line mb-6 flex items-center gap-2">
+                <Link
+                  href="/app/requests?view=incoming"
+                  className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+                    direction === "incoming"
+                      ? "border-brand-900 text-brand-900 font-semibold"
+                      : "border-transparent text-ink-600 hover:text-ink-900 hover:border-timber-300"
+                  }`}
+                >
+                  <Inbox aria-hidden="true" className="size-4" />
+                  <span>Incoming</span>
+                  {counts.incoming > 0 ? (
+                    <Badge
+                      variant={direction === "incoming" ? "available" : "unverified"}
+                      className="ml-1 text-[11px] px-1.5 py-0"
+                    >
+                      {counts.incoming}
+                    </Badge>
+                  ) : null}
+                </Link>
+
+                <Link
+                  href="/app/requests?view=sent"
+                  className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+                    direction === "sent"
+                      ? "border-brand-900 text-brand-900 font-semibold"
+                      : "border-transparent text-ink-600 hover:text-ink-900 hover:border-timber-300"
+                  }`}
+                >
+                  <Send aria-hidden="true" className="size-4" />
+                  <span>Sent</span>
+                  {counts.sent > 0 ? (
+                    <Badge
+                      variant={direction === "sent" ? "available" : "unverified"}
+                      className="ml-1 text-[11px] px-1.5 py-0"
+                    >
+                      {counts.sent}
+                    </Badge>
+                  ) : null}
+                </Link>
+              </div>
+            ) : null}
+
+            {/* Request List */}
+            {userId ? (
+              <RequestList direction={direction} userId={userId} />
+            ) : (
+              <LoadingState label="Checking user session..." />
+            )}
           </PageContainer>
         </main>
       </AppShell>

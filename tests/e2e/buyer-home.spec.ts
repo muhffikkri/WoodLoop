@@ -81,7 +81,9 @@ test("buyer requests navigation resolves to an honest dependency state", async (
   await page.getByRole("link", { name: "Requests" }).click();
   await expect(page).toHaveURL(/\/app\/requests\?view=sent$/);
   await expect(
-    page.getByRole("heading", { name: "Requests are not available yet" }),
+    page.getByRole("heading", {
+      name: /You haven't requested any materials|Requests are not available yet/,
+    }),
   ).toBeVisible();
 });
 

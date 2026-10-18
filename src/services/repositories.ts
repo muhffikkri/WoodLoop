@@ -69,6 +69,7 @@ export interface AiAnalysisService {
 
 export interface SessionService {
   getCurrentUser(): Promise<User | null>;
+  getUserById(userId: string): Promise<User | null>;
   loginDemo(userId: string): Promise<User>;
   loginWithDemoCredentials(email: string, password: string): Promise<User>;
   createLocalProfile(input: {
